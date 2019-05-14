@@ -1,0 +1,30 @@
+version: '2.3'
+services:
+  mysql:
+    image: mysql:5.7.20
+    ports:
+      - "3306:3306"
+    environment:
+        MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - ./mysql/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-uroot", "-padmin"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+  identity-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.is
+    ports:
+      - "9763:9763"
+      - "9443:9443"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:9443/carbon/admin/login.jsp"]
+      interval: 5s
+      timeout: 120s
+      start_period: 100s
+    depends_on:
+      mysql:
+        condition: service_healthy
